@@ -10,12 +10,21 @@ snarkvm-synthesizer = "0.9.11"
 snarkvm-console-network = "0.9.11"
 snarkvm-console-types-address = "0.9.11"
 snarkos-node-consensus = {version = "2.0.2", path = "../snarkos/node/consensus"}
+snarkos-node-cdn = {version = "2.0.2", path = "../snarkos/node/cdn"}
+
 tokio = {version = "1.24.1", features = ["full"]}
 reqwest = "0.11.13"
 log = "0.4.17"
 env_logger = "0.10.0"
 serde = "1.0.152"
 serde_json = "1.0.91"
+serde_yaml = "0.9"
 mysql = "23.0.1"
 mysql_common = "0.29.2"
 backoff = {version = "0.4.0", features = [ "tokio" ]}
+anyhow = "1"
+bincode = "1.0"
+colored = "2"
+futures = "0.3"
+parking_lot = "0.12"
+lazy_static = "1.4.0"

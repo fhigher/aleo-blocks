@@ -1,35 +1,39 @@
-use log::debug;
+use log::{debug, error};
 
-mod block;
+mod single;
+mod batch;
+mod parse;
 mod db;
+mod config;
 mod utils;
 
-const DEFAULT_API: &str = "https://vm.aleo.org/api/testnet3";
+// use snarkos_node_cdn::load_blocks;
+use snarkvm_console_network::Testnet3;
+use snarkvm_synthesizer::Block;
 
 #[tokio::main]
 async fn main() {
     env_logger::init();
-    let api = get_api();
-    debug!("use aleo api: {}", api);
-    let _mysql_url = String::from("mysql://root:1234567890@127.0.0.1:3306/aleo_blocks");
-    // let _sql_client = db::MysqlClient::new(&mysql_url);
+    let config = config::load_config();
+    let api = config.aleoapi;
+    debug!("use aleo api: {:?}", api);
+    let mysql_url = String::from(config.mysqldns);
+    //let sql_client = db::MysqlClient::new(&mysql_url);
     // check 三张表block height的连续性和一致性
 
     // 获取当前数据库已记录的latest_height
-    let latest_height = 372595_u32;
-    // 使用latest_height的block, 不断获取next_block，并计算next_block的reward
-    block::get_blocks(api, latest_height).await;
-}
+    let latest_height = 402105_u32;
+    let client = reqwest::Client::builder().build().unwrap();
 
-fn get_api() -> String {
-    let mut api = String::new();
-    match std::env::var("ALEO_API") {
-        Ok(a) => api.push_str(&a),
-        Err(_e) => {
-            api.push_str(DEFAULT_API);
-        }
+    if let Err((_, error)) = batch::get_blocks(&client, &api[0], 
+            latest_height, None,  move |block: Block<Testnet3>, start_height: u32| batch::process_block(&block, start_height)).await {
+        error!("batch load blocks: {}", error);
+        return;
     }
 
-    api
+    // 使用latest_height的block, 不断获取next_block，并计算next_block的reward
+    if let Err(e) = single::get_blocks(api, latest_height, &client).await {
+        error!("get_blocks_one_by_one: {:?}", e);
+    }
 }
 

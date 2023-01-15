@@ -1,0 +1,4 @@
+aleoapi:
+    - "https://vm.aleo.org/api/testnet3"
+    - "http://127.0.0.1/api/testnet3"
+mysqldns: "mysql://root:1234567890@127.0.0.1:3306/aleo_blocks"
