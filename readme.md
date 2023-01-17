@@ -14,7 +14,6 @@ block.coinbase -> coinbase_solution{ [partial_solution], proof }, 是所有prove
 export RUST_LOG=debug
 
 TODO：
-1. 数据入库mysql
-2. 自动更换api
-3. 提供查询接口
-4. 扩展其它类型数据库
+1. 自动更换api
+2. 提供查询接口
+3. 扩展其它类型数据库
