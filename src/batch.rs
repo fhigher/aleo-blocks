@@ -6,7 +6,7 @@ use std::{sync::Arc, vec};
 use log::{debug, trace};
 use std::time::Instant;
 use crate::utils::{handle_dispatch_error, log_progress};
-use crate::parse::{Solution, BlockReward};
+use crate::message::Message;
 use tokio::sync::mpsc;
 
 use snarkvm_console_network::Network;
@@ -22,8 +22,8 @@ pub struct Batch<'a, N: Network> {
     blocks: RwLock<Option<(u32, Block<N>)>>,
     batch_request: u32,
     batch_concurrent: usize,
-    solution_sender: mpsc::Sender<Solution<N>>,
-    block_sender: mpsc::Sender<BlockReward<N>>,
+    sender: mpsc::Sender<Message<N>>,
+    store_block: bool,
 }
 
 impl<'a, N:Network> Batch<'a, N> {
@@ -35,8 +35,8 @@ impl<'a, N:Network> Batch<'a, N> {
         address: &'a Vec<String>, 
         batch_request: u32,
         batch_concurrent: usize,
-        solution_sender: mpsc::Sender<Solution<N>>,
-        block_sender: mpsc::Sender<BlockReward<N>>,
+        sender: mpsc::Sender<Message<N>>,
+        store_block: bool,
     ) -> Self {
         Self { 
             client, 
@@ -47,8 +47,8 @@ impl<'a, N:Network> Batch<'a, N> {
             blocks: RwLock::new(None), 
             batch_request, 
             batch_concurrent, 
-            solution_sender,
-            block_sender
+            sender,
+            store_block,
         }
     }
     /// Loads blocks from a CDN and process them with the given function.
@@ -213,8 +213,8 @@ impl<'a, N:Network> Batch<'a, N> {
                 &current_block, 
                 &latest_block.1, 
                 &self.address, 
-                self.solution_sender.clone(),
-                self.block_sender.clone(),
+                self.sender.clone(),
+                self.store_block,
             ).await?;
         }
         

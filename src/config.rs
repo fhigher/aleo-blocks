@@ -7,6 +7,7 @@ pub struct Config {
     pub batch_request: u32,
     pub batch_concurrent: usize,
     pub address: Vec<String>,
+    pub store_block: bool,
 }
 
 pub fn load_config() -> Config {

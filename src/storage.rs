@@ -1,11 +1,10 @@
 use snarkvm_console_network::Network;
 
 use std::marker::PhantomData;
-use crate::parse::{Solution, BlockReward};
+use crate::message::{Solution, BlockReward};
 
 pub trait Storage<N: Network> {
     fn new(url: String) -> Self; 
-    fn latest_height(&self) -> u32;
     fn record_block(&self, block: &BlockReward<N>) -> anyhow::Result<bool>;
     fn record_solutions(&self, solutions: &Solution<N>) -> anyhow::Result<bool>;
 }
@@ -24,11 +23,6 @@ impl<N:Network, S: Storage<N>> Store<N, S> {
             _n: PhantomData,
             _s: PhantomData,
         }
-    }
-
-    pub fn latest_height(&self) -> u32 {
-        //<S as Storage<N>>::latest_height(&self.inner)
-        self.inner.latest_height()
     }
 
     pub fn record_block(&self, block: &BlockReward<N>) -> anyhow::Result<bool> {

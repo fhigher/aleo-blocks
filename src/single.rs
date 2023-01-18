@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 use tokio::sync::mpsc;
 use backoff::future::retry;
 use crate::utils::{backoffset, from_reqwest_err};
-use crate::parse::{Solution, BlockReward};
+use crate::message::Message;
 
 use snarkvm_console_network::Network;
 use snarkvm_synthesizer::Block;
@@ -15,8 +15,8 @@ pub struct Single<'a, N: Network> {
     latest_height: u32,
     client: &'a reqwest::Client,
     address: &'a Vec<String>,
-    solution_sender: mpsc::Sender<Solution<N>>,
-    block_sender: mpsc::Sender<BlockReward<N>>,
+    sender: mpsc::Sender<Message<N>>,
+    store_block: bool,
     _n: PhantomData<N>,
 }
 
@@ -26,16 +26,16 @@ impl<'a, N:Network> Single<'a, N> {
         latest_height: u32, 
         client: &'a reqwest::Client, 
         address: &'a Vec<String>, 
-        solution_sender: mpsc::Sender<Solution<N>>,
-        block_sender: mpsc::Sender<BlockReward<N>>,
+        sender: mpsc::Sender<Message<N>>,
+        store_block: bool,
     ) -> Self {
         Self { 
             apis, 
             latest_height, 
             client, 
             address,
-            solution_sender, 
-            block_sender,
+            sender,
+            store_block,
             _n: PhantomData}
     }
 
@@ -47,7 +47,6 @@ impl<'a, N:Network> Single<'a, N> {
         let api = &self.apis[0];
         let mut error = None;
         loop { 
-            // 等待批量同步完成，开始sync one by one
             if ! error.is_none() {
                 // TODO 更换api
                 debug!("alter api");
@@ -58,7 +57,7 @@ impl<'a, N:Network> Single<'a, N> {
                     let status = response.status();
                     let body = response.text().await?;
                     if status != reqwest::StatusCode::OK {
-                        error!("get_chain_height response status: {}, body: {}", status.as_str(), body);
+                        error!("get chain height response status: {}, body: {}", status.as_str(), body);
                         error = Some(io::Error::new(ErrorKind::Other, body));
                         continue;
                     }
@@ -95,7 +94,7 @@ impl<'a, N:Network> Single<'a, N> {
                         let status = response.status();
                         let body = response.text().await?;
                         if status != reqwest::StatusCode::OK {
-                            error!("get_first_block response status: {}, body: {}", status.as_str(), body);
+                            error!("get first block response status: {}, body: {}", status.as_str(), body);
                             error = Some(io::Error::new(ErrorKind::Other, body));
                             continue;
                         }
@@ -119,7 +118,7 @@ impl<'a, N:Network> Single<'a, N> {
                     let status = response.status();
                     let body = response.text().await?;
                     if status != reqwest::StatusCode::OK {
-                        error!("get_current_block response status: {}, body: {}", status.as_str(), body);
+                        error!("get current block response status: {}, body: {}", status.as_str(), body);
                         error = Some(io::Error::new(ErrorKind::Other, body));
                         continue;
                     }
@@ -129,8 +128,8 @@ impl<'a, N:Network> Single<'a, N> {
                         &current_block, 
                         &latest_block.1, 
                         self.address, 
-                        self.solution_sender.clone(),
-                        self.block_sender.clone(),
+                        self.sender.clone(),
+                        self.store_block,
                     ).await?;
                     latest_height_mut = current_height;
                     blocks.replace((current_height, current_block));

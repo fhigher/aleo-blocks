@@ -4,7 +4,7 @@ use mysql::prelude::*;
 use snarkvm_console_network::Network;
 
 use crate::storage::Storage;
-use crate::parse::{Solution, BlockReward};
+use crate::message::{Solution, BlockReward};
 
 pub struct MysqlClient {
     pool: Pool,
@@ -21,10 +21,6 @@ impl<'a,N> Storage<N> for MysqlClient where N: Network {
         Self {
             pool
         }
-    }
-
-    fn latest_height(&self) -> u32 {
-        413966_u32
     }
 
     fn record_block(&self, block: &BlockReward<N>) -> anyhow::Result<bool>{
