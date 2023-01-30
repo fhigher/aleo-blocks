@@ -68,7 +68,13 @@ pub async fn parse_block<N: Network>(
             // solutions的address是配置允许的address数组元素，则标记该块的相关信息可入库，并通过异步channel发送，记录该solution
             if address.contains(&partial_solution.address().to_string()) {
                 flag = true;
-                sender.send(Message::Solution(Solution { block_height: next_height, partial_solution: *partial_solution, solution_reward: prover_reward })).await?;
+                let data = Solution { 
+                    block_height: next_height, 
+                    partial_solution: *partial_solution, 
+                    solution_reward: prover_reward,
+                    timestamp: next_timestamp,
+                };
+                sender.send(Message::Solution(data)).await?;
             }
         }
 

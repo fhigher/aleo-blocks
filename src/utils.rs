@@ -45,7 +45,7 @@ pub fn log_progress(
     // Prepare the estimate message (in secs).
     let estimate = format!("(est. {} minutes remaining)", time_remaining / (60 * 1000));
     // Log the progress.
-    debug!("Synced up to {object_name} {current_index} of {cdn_end} - {percentage}% complete {}", estimate.dimmed());
+    debug!("synced up to {object_name} {current_index} of {cdn_end} - {percentage}% complete {}", estimate.dimmed());
 }
 
 /// Executes the given closure, with a backoff policy, and returns the result.
@@ -56,10 +56,10 @@ where
     
     fn from_anyhow_err(err: anyhow::Error) -> backoff::Error<anyhow::Error> {
         if let Ok(err) = err.downcast::<reqwest::Error>() {
-            debug!("Server error: {err}; retrying...");
+            debug!("server error: {err}; retrying...");
             Error::Transient { err: err.into(), retry_after: None }
         } else {
-            Error::Transient { err: anyhow!("Block parse error"), retry_after: None }
+            Error::Transient { err: anyhow!("block parse error"), retry_after: None }
         }
     }
 

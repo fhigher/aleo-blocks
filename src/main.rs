@@ -117,7 +117,7 @@ mod tests {
         let latest_height = u32::from_le_bytes(buf);
         println!("get latest_height {} from file", latest_height);
 
-        //let height = u32::to_le_bytes(u32::MAX);
-        //mmap.copy_from_slice(&height[..]);
+        let height = u32::to_le_bytes(6975);
+        mmap.copy_from_slice(&height[..]);
     }
 }

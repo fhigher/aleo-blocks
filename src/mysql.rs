@@ -48,7 +48,7 @@ impl<'a,N> Storage<N> for MysqlClient where N: Network {
 
     fn record_solutions(&self, solution: &Solution<N>) -> anyhow::Result<bool> {
         let mut conn = self.pool.get_conn()?;
-        let sql = format!("INSERT INTO {} (block_height, address, nonce, commitment, solution_reward) VALUES(?, ?, ?, ?, ?)", TABLE_SOLUTIONS_NAME);
+        let sql = format!("INSERT INTO {} (block_height, address, nonce, commitment, solution_reward, timestamp) VALUES(?, ?, ?, ?, ?, ?)", TABLE_SOLUTIONS_NAME);
         conn.exec_drop(
             sql, 
             (
@@ -56,7 +56,8 @@ impl<'a,N> Storage<N> for MysqlClient where N: Network {
                 solution.partial_solution.address().to_string(), 
                 solution.partial_solution.nonce(), 
                 solution.partial_solution.commitment().to_string(),
-                solution.solution_reward
+                solution.solution_reward,
+                solution.timestamp,
             )
         )?;
         Ok(true)

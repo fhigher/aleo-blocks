@@ -35,6 +35,7 @@ pub struct Solution<N: Network> {
     pub block_height: u32,
     pub partial_solution: PartialSolution<N>,
     pub solution_reward: u64,
+    pub timestamp: i64,
 }
 
 impl<N: Network> MessageTrait<N> for Solution<N> {
