@@ -2327,6 +2327,7 @@ checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 [[package]]
 name = "snarkos-node-consensus"
 version = "2.0.2"
+source = "git+https://github.com/AleoHQ/snarkOS.git#8f7f6d99d96e6dda3d825885d35017d0633da368"
 dependencies = [
  "anyhow",
  "indexmap",
@@ -2343,6 +2344,7 @@ dependencies = [
 [[package]]
 name = "snarkos-node-ledger"
 version = "2.0.2"
+source = "git+https://github.com/AleoHQ/snarkOS.git#8f7f6d99d96e6dda3d825885d35017d0633da368"
 dependencies = [
  "aleo-std",
  "anyhow",
@@ -3308,9 +3310,9 @@ checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
 
 [[package]]
 name = "ureq"
-version = "2.6.1"
+version = "2.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "733b5ad78377302af52c0dbcb2623d78fe50e4b3bf215948ff29e9ee031d8566"
+checksum = "338b31dd1314f68f3aabf3ed57ab922df95ffcd902476ca7ba3c4ce7b908c46d"
 dependencies = [
  "base64",
  "flate2",

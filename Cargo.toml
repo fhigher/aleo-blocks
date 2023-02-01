@@ -12,7 +12,7 @@ default = [ "mysql" ]
 snarkvm-synthesizer = "0.9.11"
 snarkvm-console-network = "0.9.11"
 snarkvm-console-types-address = "0.9.11"
-snarkos-node-consensus = {version = "2.0.2", path = "../snarkos/node/consensus"}
+snarkos-node-consensus  = {git = "https://github.com/AleoHQ/snarkOS.git", version = "2.0.2"}
 
 tokio = {version = "1.24.1", features = ["full"]}
 reqwest = "0.11.13"
