@@ -69,6 +69,7 @@ async fn main() {
     let listen_ip = config.listen_ip;
     tokio::spawn(async move {
         let ip = SocketAddr::from_str(&listen_ip).unwrap_or(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 9898));
+        #[cfg(feature = "mysql")]
         server::Server::<Testnet3, mysql::MysqlClient>::start(ip, store.clone());
     });
 
