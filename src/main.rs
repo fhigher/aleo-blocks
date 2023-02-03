@@ -53,7 +53,7 @@ async fn main() {
     let (sender, receiver) = mpsc::channel(4096);
 
     #[cfg(feature = "mysql")]
-    let store = storage::Store::<Testnet3, mysql::MysqlClient>::new(String::from(config.mysqldns));
+    let store = storage::Store::<Testnet3, mysql::MysqlClient>::new(String::from(config.mysqldsn));
 
     tokio::spawn(async move {
         #[cfg(feature = "mysql")]
