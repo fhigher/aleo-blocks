@@ -1,5 +1,5 @@
 use backoff::{future::retry, ExponentialBackoff, Error};
-use log::debug;
+use log::{info, error};
 use colored::Colorize;
 use core::ops::Range;
 use futures::Future;
@@ -15,7 +15,7 @@ pub fn backoffset() -> ExponentialBackoff {
 }
 
 pub fn from_reqwest_err(err: reqwest::Error) -> backoff::Error<reqwest::Error> {
-    debug!("access aleo api: {err}; retrying...");
+    error!("access aleo api: {err}; retrying...");
     Error::Transient { err: err.into(), retry_after: None }
 }
 
@@ -45,7 +45,7 @@ pub fn log_progress(
     // Prepare the estimate message (in secs).
     let estimate = format!("(est. {} minutes remaining)", time_remaining / (60 * 1000));
     // Log the progress.
-    debug!("synced up to {object_name} {current_index} of {cdn_end} - {percentage}% complete {}", estimate.dimmed());
+    info!("synced up to {object_name} {current_index} of {cdn_end} - {percentage}% complete {}", estimate.dimmed());
 }
 
 /// Executes the given closure, with a backoff policy, and returns the result.
@@ -56,7 +56,7 @@ where
     
     fn from_anyhow_err(err: anyhow::Error) -> backoff::Error<anyhow::Error> {
         if let Ok(err) = err.downcast::<reqwest::Error>() {
-            debug!("server error: {err}; retrying...");
+            error!("server error: {err}; retrying...");
             Error::Transient { err: err.into(), retry_after: None }
         } else {
             Error::Transient { err: anyhow!("block parse error"), retry_after: None }

@@ -3,7 +3,7 @@ use futures::StreamExt;
 use parking_lot::RwLock;
 use reqwest::Client;
 use std::{sync::Arc, vec};
-use log::{debug, trace};
+use log::{info, trace};
 use std::time::Instant;
 use crate::utils::{handle_dispatch_error, log_progress};
 use crate::message::Message;
@@ -110,7 +110,7 @@ impl<'a, N:Network> Batch<'a, N> {
                 // If the sync *has not* failed, log the progress.
                 let ctx = format!("blocks {start} to {end}");
                 if failed.read().is_none() {
-                    debug!("Requesting {ctx} (of {cdn_end})");
+                    info!("Requesting {ctx} (of {cdn_end})");
                 }
 
                 // Download the blocks with an exponential backoff retry policy.

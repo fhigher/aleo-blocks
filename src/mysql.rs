@@ -3,9 +3,10 @@ use mysql::prelude::*;
 
 use snarkvm_console_network::Network;
 
-use crate::storage::Storage;
+use crate::storage::{Storage, Reward};
 use crate::message::{Solution, BlockReward};
 
+#[derive(Clone)]
 pub struct MysqlClient {
     pool: Pool,
 }
@@ -61,5 +62,26 @@ impl<'a,N> Storage<N> for MysqlClient where N: Network {
             )
         )?;
         Ok(true)
+    }
+    
+    // timestamp -> [begin, end)
+    fn get_solutions_by_time_range(&self, address: &String, begin: i64, end: i64) -> anyhow::Result<Vec<Reward>> {
+        let mut conn = self.pool.get_conn()?;
+        let sql = format!("SELECT address, block_height, nonce, solution_reward, timestamp FROM {} WHERE address = ? and timestamp >= ? and timestamp < ?", TABLE_SOLUTIONS_NAME);
+        let result = conn.exec_map(
+            sql,
+            (address, begin, end),
+            |(address, height, nonce, reward, timestamp)| {
+                Reward {
+                    address,
+                    height,
+                    nonce,
+                    reward,
+                    timestamp,
+                }
+            }
+        )?;
+
+        Ok(result)
     }
 }

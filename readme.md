@@ -20,7 +20,7 @@
 
 #### 运行方法
     cargo build --release
-    设置日志等级(默认debug) export RUST_LOG=debug
+    设置日志等级(默认info) export RUST_LOG=debug 修改log level
     修改配置文件参数
     ./target/release/aleo-reward
 

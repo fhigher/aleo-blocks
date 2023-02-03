@@ -1,7 +1,9 @@
-use log::{debug, error, warn};
+use log::{info, error, warn};
 use tokio::sync::mpsc;
 use std::fs::OpenOptions;
 use std::path::PathBuf;
+use std::net::{SocketAddr, IpAddr, Ipv4Addr};
+use std::str::FromStr;
 use memmap2::MmapMut;
 
 mod single;
@@ -12,6 +14,7 @@ mod storage;
 mod config;
 mod utils;
 mod message;
+mod server;
 
 use snarkvm_console_network::Testnet3;
 
@@ -19,20 +22,20 @@ use snarkvm_console_network::Testnet3;
 async fn main() {
     if let Err(e) = std::env::var("RUST_LOG") {
         warn!("the log level env {:?}, set default.", e);
-        std::env::set_var("RUST_LOG", "debug");
+        std::env::set_var("RUST_LOG", "info");
     }
     env_logger::init();
     let config = config::load_config();
 
     let api = config.aleoapi;
-    debug!("use aleo api: {:?}", api);
+    info!("use aleo api: {:?}", api);
 
     let address = config.address;
     if address.is_empty() {
         error!("must specify wallet address...");
         return;
     }
-    debug!("sync block data with address only: {:?}", &address);
+    info!("sync block data with address only: {:?}", &address);
 
     let path: PathBuf = PathBuf::from("block_height.sync");
     let file = OpenOptions::new()
@@ -47,7 +50,7 @@ async fn main() {
     let mut buf: [u8; 4] = [0, 0, 0, 0];
     buf.copy_from_slice(mmap.get(0..mmap.len()).unwrap());
     let latest_height = u32::from_le_bytes(buf);
-    debug!("get sync latest height {} from file", latest_height);
+    info!("get sync latest height {} from file", latest_height);
     
     let client = reqwest::Client::builder().build().unwrap();
     let (sender, receiver) = mpsc::channel(4096);
@@ -55,9 +58,18 @@ async fn main() {
     #[cfg(feature = "mysql")]
     let store = storage::Store::<Testnet3, mysql::MysqlClient>::new(String::from(config.mysqldns));
 
+    let s = store.clone();
+    // 消息处理
     tokio::spawn(async move {
         #[cfg(feature = "mysql")]
-        message::handle::<Testnet3, mysql::MysqlClient>(store, receiver, mmap).await;
+        message::handle::<Testnet3, mysql::MysqlClient>(s, receiver, mmap).await;
+    });
+
+    // api server
+    let listen_ip = config.listen_ip;
+    tokio::spawn(async move {
+        let ip = SocketAddr::from_str(&listen_ip).unwrap_or(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 9898));
+        server::Server::<Testnet3, mysql::MysqlClient>::start(ip, store.clone());
     });
 
     // 批量同步历史区块

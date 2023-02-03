@@ -1,4 +1,4 @@
-use log::{error, debug};
+use log::{error, info, warn};
 use tokio::time::{sleep, Duration};
 use std::io::{self, ErrorKind};
 use std::marker::PhantomData;
@@ -49,7 +49,7 @@ impl<'a, N:Network> Single<'a, N> {
         loop { 
             if ! error.is_none() {
                 // TODO 更换api
-                debug!("alter api");
+                info!("alter api");
             }
             result = self.get_chain_height(api).await;
             match result {
@@ -62,7 +62,7 @@ impl<'a, N:Network> Single<'a, N> {
                         continue;
                     }
                     chain_height = body.parse::<u32>().unwrap();
-                    debug!("latest chain height: {}", chain_height);
+                    info!("latest chain height: {}", chain_height);
                 },
                 Err(e) => {
                     error!("get chain height {:?}" , e);
@@ -72,7 +72,7 @@ impl<'a, N:Network> Single<'a, N> {
             }
             // 链上最新高度 - latest_height_mut < 0, 则更换api并跳过
             if chain_height < latest_height_mut {
-                debug!("api {} does not sync to the latest height", api);
+                warn!("api {} does not sync to the latest height", api);
                 error = Some(io::Error::new(ErrorKind::Other, ""));
                 continue;
             }
@@ -80,14 +80,14 @@ impl<'a, N:Network> Single<'a, N> {
             // 链上最新高度 - latest_height_mut <= 10, 则跳过，避免获取到分叉块
             if chain_height - latest_height_mut <= 10 {
                 // sleep 出块时间
-                debug!("had recorded latest height: {}, waiting {} new blocks will be confirmed...", latest_height_mut, 10);
+                warn!("had recorded latest height: {}, waiting {} new blocks will be confirmed...", latest_height_mut, 10);
                 sleep(Duration::from_secs(15)).await;
                 continue;
             }
     
-            // 进程刚启动执行一次，从数据库拿取的latest_height对应的block
+            // 批量区块同步完成后，开始单个区块拉取时，获取一次latest_height的区块
             if latest_height_mut == self.latest_height {
-                debug!("get first block: {}", self.latest_height);
+                info!("get first block: {}", self.latest_height);
                 result = self.get_block(api, self.latest_height).await;
                 match result {
                     Ok(response)=> {
@@ -111,7 +111,7 @@ impl<'a, N:Network> Single<'a, N> {
             
             // 获取current_height 对应的block, 并计算该block奖励
             let current_height = latest_height_mut + 1;  
-            debug!("get current block: {}", current_height);  
+            info!("get current block: {}", current_height);  
             result = self.get_block(api, current_height).await;
             match result {
                 Ok(response )=> {

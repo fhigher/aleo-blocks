@@ -11,3 +11,5 @@ address:
     - "aleo1wxkn9se2hxftwq0hcls4vwywy0pc8lc9xl97ws72yaca0zrflqzqcf20a0"
 # 是否存储区块信息，默认false, 则只存储和address相关的solution信息
 store_block: false
+# api server
+listen_ip: 0.0.0.0:9898
