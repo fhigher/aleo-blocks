@@ -5,6 +5,9 @@ use core::ops::Range;
 use futures::Future;
 use std::time::{Duration, Instant};
 use anyhow::anyhow;
+use tokio::runtime::{self, Runtime};
+use std::fs::{OpenOptions, File};
+use std::path::PathBuf;
 
 pub fn backoffset() -> ExponentialBackoff {
     ExponentialBackoff {
@@ -64,4 +67,30 @@ where
     }
 
     retry(backoffset(), || async { func().await.map_err(from_anyhow_err) }).await
+}
+
+ /// Returns a runtime for the node.
+ pub fn runtime() -> Runtime {
+    let (num_tokio_worker_threads, max_tokio_blocking_threads) = (num_cpus::get(), 512);
+
+    // Initialize the runtime configuration.
+    runtime::Builder::new_multi_thread()
+        .enable_all()
+        .thread_stack_size(8 * 1024 * 1024)
+        .worker_threads(num_tokio_worker_threads)
+        .max_blocking_threads(max_tokio_blocking_threads)
+        .build()
+        .expect("Failed to initialize a runtime for the router")
+}
+
+pub fn open_file(filepath: String) -> File {
+    let path: PathBuf = PathBuf::from(filepath);
+    let file = OpenOptions::new()
+                        .read(true)
+                        .write(true)
+                        .create(true)
+                        .open(&path)
+                        .unwrap();
+    file.set_len(4).unwrap();
+    file
 }

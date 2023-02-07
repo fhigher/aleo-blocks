@@ -8,11 +8,11 @@ pub struct Config {
     pub batch_concurrent: usize,
     pub address: Vec<String>,
     pub store_block: bool,
+    pub synced_height_file: String,
     pub listen_ip: String,
 }
 
-pub fn load_config() -> Config {
-    let config_file = "config.yml";
-    let fobj = std::fs::File::open(config_file).unwrap();
+pub fn load_config(path: String) -> Config {
+    let fobj = std::fs::File::open(path).unwrap();
     serde_yaml::from_reader(fobj).unwrap()
 }
