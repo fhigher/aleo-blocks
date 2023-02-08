@@ -1,5 +1,5 @@
 use clap::Parser;
-use anyhow::{bail, Result};
+use anyhow::Result;
 use log::{info, error};
 use memmap2::MmapMut;
 use tokio::sync::mpsc;
@@ -39,13 +39,7 @@ impl Sync {
         match self {
             Self::Start{ config } => {
                 let config = load_config(config);
-                {
-                    let address = &config.address;
-                    if address.is_empty() {
-                        bail!("must config wallet address...");
-                    }
-                    info!("sync block data with address only: {:?}", &address);
-                }
+                info!("sync block data with address only: {:?}", &config.address);
                 runtime().block_on(async move { 
                     Self::sync(config).await;
                 });

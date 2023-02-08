@@ -65,8 +65,7 @@ pub async fn parse_block<N: Network>(
             prover_rewards.push((partial_solution.address(), prover_reward));
 
             // 入库存储 
-            // solutions的address是配置允许的address数组元素，则标记该块的相关信息可入库，并通过异步channel发送，记录该solution
-            if address.contains(&partial_solution.address().to_string()) {
+            if address.is_empty() || address.contains(&partial_solution.address().to_string()) {
                 flag = true;
                 let data = Solution { 
                     block_height: next_height, 
@@ -81,7 +80,6 @@ pub async fn parse_block<N: Network>(
         // block reward
         for prover in prover_rewards {
             trace!("prover {} coinbase reward is {}", prover.0, prover.1);
-            // total_reward += prover.1;
             total_reward = total_reward.saturating_add(prover.1);
         }
 
