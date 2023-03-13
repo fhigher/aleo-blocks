@@ -6,7 +6,6 @@ use snarkvm_console_network::Network;
 use crate::storage::{Storage, Reward};
 use crate::message::{Solution, BlockReward};
 
-#[derive(Clone)]
 pub struct MysqlClient {
     pool: Pool,
 }

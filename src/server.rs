@@ -13,16 +13,16 @@ use warp::{reply, Filter, Rejection, Reply};
 use crate::storage::{Storage, Store};
 use snarkvm_console_network::Network;
 
-pub struct Server<N: Network, S: Storage<N> + Send + Clone + Sync + 'static> {
-    store: Store<N, S>,
+pub struct Server<N: Network, S: Storage<N> + Send + Sync + 'static> {
+    store: Arc<Store<N, S>>,
     handles: Vec<Arc<JoinHandle<()>>>,
     _p: PhantomData<N>,
 }
 
-impl<N: Network, S: Storage<N> + Send + Clone + Sync + 'static> Server<N, S> {
+impl<N: Network, S: Storage<N> + Send + Sync + 'static> Server<N, S> {
     pub fn start(listen_ip: SocketAddr, store: Store<N, S>) -> Self {
         let mut server = Self { 
-            store,
+            store: Arc::new(store),
             handles: vec![],
             _p: PhantomData,
         };
@@ -55,16 +55,16 @@ impl<N: Network, S: Storage<N> + Send + Clone + Sync + 'static> Server<N, S> {
     }
 
     pub fn routes(&self) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-        // GET /testnet3/rewards/{address}/{begin}/{end}
-        let rewards = warp::get()
-            .and(warp::path!("testnet3" / "rewards" / String / i64 / i64))
+        // GET /testnet3/solutions/rewards/{address}/{begin}/{end}
+        let solutions_rewards = warp::get()
+            .and(warp::path!("testnet3" / "solutions" / "rewards" / String / i64 / i64))
             .and(with(self.store.clone()))
-            .and_then(Self::get_rewards);
+            .and_then(Self::get_solutions_rewards);
 
-        rewards
+        solutions_rewards
     }
 
-    pub async fn get_rewards(address: String, begin: i64, end: i64, store: Store<N, S>) -> anyhow::Result<impl Reply, Rejection> {
+    pub async fn get_solutions_rewards(address: String, begin: i64, end: i64, store: Arc<Store<N, S>>) -> anyhow::Result<impl Reply, Rejection> {
         let result = store.get_solutions_by_time_range(&address, begin, end).map_or(Response::success(vec![]),|v| { 
             Response::success(v)
         });

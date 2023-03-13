@@ -20,7 +20,7 @@ pub trait Storage<N: Network> {
     fn get_solutions_by_time_range(&self, address: &String, begin: i64, end: i64) -> anyhow::Result<Vec<Reward>>;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Store<N:Network, S: Storage<N> + Sized> {
     inner: S,
     _n: PhantomData<N>,
