@@ -1,10 +1,10 @@
 use anyhow::{anyhow, bail, Result};
 use futures::StreamExt;
 use parking_lot::RwLock;
-use reqwest::Client;
 use std::{sync::Arc, vec};
 use log::{info, trace};
 use std::time::Instant;
+use crate::manage::ApiManage;
 use crate::utils::{handle_dispatch_error, log_progress};
 use crate::message::Message;
 use tokio::sync::mpsc;
@@ -14,8 +14,7 @@ use snarkvm_synthesizer::Block;
 
 #[derive(Debug)]
 pub struct Batch<'a, N: Network> {
-    client: &'a Client,
-    base_url: &'a str,
+    api_manage: ApiManage,
     start_height: u32,
     end_height: Option<u32>,
     address: &'a Vec<String>,
@@ -28,8 +27,7 @@ pub struct Batch<'a, N: Network> {
 
 impl<'a, N:Network> Batch<'a, N> {
     pub fn new(
-        client: &'a Client, 
-        base_url: &'a str, 
+        api_manage: ApiManage,
         start_height: u32, 
         end_height: Option<u32>, 
         address: &'a Vec<String>, 
@@ -39,8 +37,7 @@ impl<'a, N:Network> Batch<'a, N> {
         store_block: bool,
     ) -> Self {
         Self { 
-            client, 
-            base_url, 
+            api_manage,
             start_height, 
             end_height, 
             address, 
@@ -114,11 +111,9 @@ impl<'a, N:Network> Batch<'a, N> {
                 }
 
                 // Download the blocks with an exponential backoff retry policy.
-                let base_url_clone = self.base_url.to_string();
                 let failed_clone = failed.clone();
                 handle_dispatch_error(move || {
                     let ctx = ctx.clone();
-                    let base_url = base_url_clone.clone();
                     let failed = failed_clone.clone();
                     async move {
                         // If the sync failed, return with an empty vector.
@@ -126,10 +121,10 @@ impl<'a, N:Network> Batch<'a, N> {
                             return std::future::ready(Ok(vec![])).await
                         }
                         // 取指定高度block
-                        // let blocks_url = format!("{base_url}/block/{start}");
+                        // let blocks_url = format!("/block/{start}");
                         // let blocks: Vec<Block<N>> = cdn_get_one(client, &blocks_url, &ctx).await?;
                         // 取范围内 [start, end)
-                        let blocks_url = format!("{base_url}/blocks?start={start}&end={end}");
+                        let blocks_url = format!("/blocks?start={start}&end={end}");
                         // Fetch the blocks.
                         let blocks: Vec<Block<N>> = self.cdn_get_range(&blocks_url, &ctx).await?;
                         // Return the blocks.
@@ -228,15 +223,8 @@ impl<'a, N:Network> Batch<'a, N> {
     /// Note: This function decrements the tip by a few blocks, to ensure the
     /// tip is not on a block that is not yet available on the CDN.
     async fn cdn_height(&self) -> Result<u32> {
-        // Create a request client.
-        let client = match reqwest::Client::builder().build() {
-            Ok(client) => client,
-            Err(error) => bail!("Failed to create a CDN request client: {error}"),
-        };
-        // Prepare the URL.
-        let height_url = format!("{}/latest/height", self.base_url);
         // Send the request.
-        let response = match client.get(height_url).send().await {
+        let response = match self.api_manage.get("/latest/height").await {
             Ok(response) => response,
             Err(error) => bail!("Failed to fetch the CDN height: {error}"),
         };
@@ -260,12 +248,11 @@ impl<'a, N:Network> Batch<'a, N> {
     #[allow(unused)]
     async fn _cdn_get_one(&self, url: &str, ctx: &str) -> Result<Vec<Block<N>>> {
         // Fetch the bytes from the given URL.
-        let response = match self.client.get(url).send().await {
+        let response = match self.api_manage.get(url).await {
             Ok(response) => response,
             Err(error) => bail!("Failed to fetch {ctx}: {error}"),
         };
 
-        // TODO response 处理
         let res = match response.text().await {
             Ok(body) => serde_json::from_str(&body),
             Err(error) => bail!("Failed to parse {ctx}: {error}"),
@@ -280,12 +267,11 @@ impl<'a, N:Network> Batch<'a, N> {
     }
 
     async fn cdn_get_range(&self, url: &str, ctx: &str) -> Result<Vec<Block<N>>> {
-        let response = match self.client.get(url).send().await {
+        let response = match self.api_manage.get(url).await {
             Ok(response) => response,
             Err(error) => bail!("Failed to fetch {ctx}: {error}"),
         };
 
-        // TODO response 处理, 使用tokio::spawn_blocking处理json解码
         let res = match response.text().await {
             Ok(body) => serde_json::from_str(&body),
             Err(error) => bail!("Failed to parse {ctx}: {error}"),

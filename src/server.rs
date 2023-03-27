@@ -13,6 +13,33 @@ use warp::{reply, Filter, Rejection, Reply};
 use crate::storage::{Storage, Store};
 use snarkvm_console_network::Network;
 
+#[derive(Debug, Serialize)]
+pub struct Response<T> {
+    pub code: i32,
+    pub message: String,
+    pub data: T,
+}
+
+impl<T: Serialize> Response<T> {
+    pub fn new(code: i32, message: String, data: T) -> Self {
+        Self { code, message, data }
+    }
+
+    pub fn success(data: T) -> Self {
+        Self::new(0, String::from("success"), data)
+    }
+
+    pub fn json(&self) -> reply::Json {
+        reply::json(&self)
+    }
+}
+
+/// A middleware to include the given item in the handler.
+pub fn with<T: Clone + Send>(item: T) -> impl Filter<Extract = (T,), Error = std::convert::Infallible> + Clone {
+    warp::any().map(move || item.clone())
+}
+
+
 pub struct Server<N: Network, S: Storage<N> + Send + Sync + 'static> {
     store: Arc<Store<N, S>>,
     handles: Vec<Arc<JoinHandle<()>>>,
@@ -61,9 +88,15 @@ impl<N: Network, S: Storage<N> + Send + Sync + 'static> Server<N, S> {
             .and(with(self.store.clone()))
             .and_then(Self::get_solutions_rewards);
 
+        
+
         solutions_rewards
     }
 
+   
+}
+
+impl<N: Network, S: Storage<N> + Send + Sync + 'static> Server<N, S> {
     pub async fn get_solutions_rewards(address: String, begin: i64, end: i64, store: Arc<Store<N, S>>) -> anyhow::Result<impl Reply, Rejection> {
         let result = store.get_solutions_by_time_range(&address, begin, end).map_or(Response::success(vec![]),|v| { 
             Response::success(v)
@@ -72,32 +105,3 @@ impl<N: Network, S: Storage<N> + Send + Sync + 'static> Server<N, S> {
     }
 }
 
-#[derive(Debug, Serialize)]
-pub struct Response<T> {
-    pub code: i32,
-    pub message: String,
-    pub data: T,
-}
-
-impl<T: Serialize> Response<T> {
-    pub fn new(code: i32, message: String, data: T) -> Self {
-        Self {
-            code,
-            message,
-            data,
-        }
-    }
-
-    pub fn success(data: T) -> Self {
-        Self::new(0, String::from("success"), data)
-    }
-
-    pub fn json(&self) -> reply::Json {
-        reply::json(&self)
-    }
-}
-
-/// A middleware to include the given item in the handler.
-pub fn with<T: Clone + Send>(item: T) -> impl Filter<Extract = (T,), Error = std::convert::Infallible> + Clone {
-    warp::any().map(move || item.clone())
-}

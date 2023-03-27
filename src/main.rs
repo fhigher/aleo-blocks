@@ -10,6 +10,7 @@ mod utils;
 mod message;
 mod server;
 mod cli;
+mod manage;
 
 fn main() {
     if let Err(e) = std::env::var("RUST_LOG") {

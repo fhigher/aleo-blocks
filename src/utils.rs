@@ -4,7 +4,6 @@ use colored::Colorize;
 use core::ops::Range;
 use futures::Future;
 use std::time::{Duration, Instant};
-use anyhow::anyhow;
 use tokio::runtime::{self, Runtime};
 use std::fs::{OpenOptions, File};
 use std::path::PathBuf;
@@ -51,21 +50,24 @@ pub fn log_progress(
     info!("synced up to {object_name} {current_index} of {cdn_end} - {percentage}% complete {}", estimate.dimmed());
 }
 
+fn from_anyhow_err(err: anyhow::Error) -> backoff::Error<anyhow::Error> {
+    match err.downcast::<reqwest::Error>() {
+        Ok(e) => {
+            error!("reqwest error: {e}; retrying...");
+            Error::Transient { err: e.into(), retry_after: None }
+        },
+        Err(e) => {
+            error!("other error: {e}");
+            Error::Transient { err: e, retry_after: None }
+        }
+    } 
+}
+
 /// Executes the given closure, with a backoff policy, and returns the result.
 pub(crate) async fn handle_dispatch_error<'a, T, F>(func: impl Fn() -> F + 'a) -> anyhow::Result<T>
 where
     F: Future<Output = Result<T, anyhow::Error>>,
 {
-    
-    fn from_anyhow_err(err: anyhow::Error) -> backoff::Error<anyhow::Error> {
-        if let Ok(err) = err.downcast::<reqwest::Error>() {
-            error!("server error: {err}; retrying...");
-            Error::Transient { err: err.into(), retry_after: None }
-        } else {
-            Error::Transient { err: anyhow!("block parse error"), retry_after: None }
-        }
-    }
-
     retry(backoffset(), || async { func().await.map_err(from_anyhow_err) }).await
 }
 

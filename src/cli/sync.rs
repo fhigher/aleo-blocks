@@ -4,8 +4,8 @@ use log::{info, error};
 use memmap2::MmapMut;
 use tokio::sync::mpsc;
 
-
 use crate::cli::config::{load_config, Config};
+use crate::manage::ApiManage;
 use crate::storage::Store;
 use crate::mysql::MysqlClient;
 use crate::utils::{runtime, open_file};
@@ -69,8 +69,8 @@ impl Sync {
     }
 
     async fn sync(config: Config){
-        let api = config.aleoapi;
-        info!("use aleo api: {:?}", api);
+        let apis = config.aleoapi;
+        info!("use aleo api: {:?}", apis);
 
         let address = config.address;
         let file = open_file(config.synced_height_file);
@@ -80,8 +80,9 @@ impl Sync {
         buf.copy_from_slice(mmap.get(0..mmap.len()).unwrap());
         let latest_height = u32::from_le_bytes(buf);
         info!("get sync latest height {} from file", latest_height);
-
+        
         let client = reqwest::Client::builder().build().unwrap();
+        let api_manager = ApiManage::new(client.clone(), apis);
         let (sender, receiver) = mpsc::channel(4096);
     
         #[cfg(feature = "mysql")]
@@ -95,8 +96,7 @@ impl Sync {
 
           // 批量同步历史区块
         let batch_obj = crate::batch::Batch::<Testnet3>::new(
-            &client, 
-            &api[0], 
+             api_manager.clone(),
             latest_height,
             None, 
             &address, 
@@ -115,9 +115,8 @@ impl Sync {
 
         // 同步单个区块
         let single_obj = crate::single::Single::<Testnet3>::new(
-            api, 
-            latest_height, 
-            &client, 
+            api_manager.clone(),
+            latest_height,
             &address, 
             sender.clone(),
             config.store_block,

@@ -1,5 +1,5 @@
 [package]
-name = "aleo-tools"
+name = "aleo-blocks"
 version = "0.1.0"
 edition = "2021"
 

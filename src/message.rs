@@ -1,6 +1,6 @@
 use log::debug;
 use tokio::sync::mpsc;
-use log::{error, trace};
+use log::error;
 use memmap2::MmapMut;
 
 use snarkvm_synthesizer::{Block, PartialSolution};
@@ -79,10 +79,10 @@ pub async fn handle<N: Network, S: Storage<N>>(
         let message = receiver.recv().await; 
         if message.is_none() {
             error!("receive None from message channel");
-            continue;
+            break;
         }
         let message = message.unwrap();
-        trace!("receive {} message", message.name());
+        debug!("receive {} message", message.name());
         match message {
             Message::Solution(msg) => {
                 if let Err(e) = store.record_solutions(&msg) {
