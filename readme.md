@@ -1,34 +1,42 @@
-### 同步aleo blocks数据，计算block及solution奖励, 查询block, solution, transaction信息
+## Sync aleo blocks data, calculate block and solution reward, and support api query.
 
-#### Checklist
-- [x] 同步block及solution数据
-- [ ] 同步transaction数据
-- [x] 根据address过滤条件，特定数据入库存储
-- [x] 计算区块奖励和各个solution奖励
-- [ ] 查询block及奖励接口
-- [x] 查询solution及奖励接口
-- [ ] 查询transaction接口 
-- [x] 自动更换api
+[![License](https://img.shields.io/badge/license-MIT-blue)](https://raw.githubusercontent.com/ipdr/ipdr/master/LICENSE)
+[![stability-stable](https://img.shields.io/badge/stability-stable-green.svg)](https://github.com/emersion/stability-badges#stable)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
 
-#### 设计思路
-1. 使用公共或自己的节点API，拉取区块json数据, 配置存储指定address相关的数据
-2. 同时将height, block_hash, previous_hash, header.metadata, block_reward入库
-3. 通过height外键关联记录transactions
-4. 通过height外键关联记录solutions
-5. 计算solution和block奖励
+### checklist
+- [x] sync block and solution data
+- [x] auto alternative api
+- [x] according to the address filter conditions, specific data is stored in the database
+- [x] calculate block and solution reward
+- [x] query solution and reward
+- [ ] query block and reward
 
-#### 关于奖励部分区块json字段对应源码结构
-    block.coinbase -> coinbase_solution {[partial_solution], proof}, 是所有prove_solution {partial_solution, proof} 的聚合。聚合的proof和每个solution的proof，都是分别用来验证solution
+### solution proof and aggregation proof
+    block.coinbase -> coinbase_solution {[partial_solution], proof}
 
-#### 使用方式
-    1. 将aleo-blocks.sql导入mysql数据库
-    2. 编译 cargo build --release
-    3. 设置日志等级(默认info) export RUST_LOG=debug 修改log level
-    4. 修改配置文件，调整参数
-    5. 启动所需服务或命令，如下：
-        a. 同步服务 ./target/release/aleo-blocks sync start 
-        b. api服务 ./target/release/aleo-blocks api start
-        c. 查看或更新已同步高度的文件记录 ./target/release/aleo-blocks sync check/update
+    aggregate all: prove_solution {partial_solution, proof}
+
+    aggregation proof and the proof of each solution are seperately used to validate solution
+
+### how to 
+    1. import the file "aleo-blocks.sql" in mysql database.
+
+    2. cd aleo-blocks & cargo build --release.
+
+    3. export RUST_LOG=debug, set log level, default is info.
+
+    4. modify config file
+
+    5. run
+        a. sync blocks service:     
+            ./target/release/aleo-blocks sync start 
+
+        b. api service:             
+            ./target/release/aleo-blocks api start
+
+        c. view or update the sync height record file：
+            ./target/release/aleo-blocks sync check/update
     
 
 

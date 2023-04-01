@@ -38,6 +38,7 @@ impl<'a, N:Network> Single<'a, N> {
         let mut latest_height_mut = self.latest_height;
         let mut blocks: Option<(u32, Block<N>)> = None;
         let mut chain_height;
+        let block_duration = 15;
         let mut result;
         loop { 
             result = self.api_manage.get("/latest/height").await;
@@ -46,29 +47,29 @@ impl<'a, N:Network> Single<'a, N> {
                     let status = response.status();
                     let body = response.text().await?;
                     if status != reqwest::StatusCode::OK {
-                        error!("get chain height response status: {}, body: {}", status.as_str(), body);
+                        error!("get latest chain height response status: {}, body: {}", status.as_str(), body);
+                        sleep(Duration::from_secs(block_duration)).await;
                         continue;
                     }
                     chain_height = body.parse::<u32>().unwrap();
-                    info!("latest chain height: {}", chain_height);
+                    info!("get latest chain height {} from api", chain_height);
                 },
                 Err(e) => {
-                    error!("get chain height {:?}" , e);
+                    error!("get latest chain height {:?}" , e);
+                    sleep(Duration::from_secs(block_duration)).await;
                     continue;
                 }
             }
-            // 链上最新高度 - latest_height_mut < 0, 则更换api并跳过
+            // 链上最新高度 - latest_height_mut < 0
             if chain_height < latest_height_mut {
                 warn!("api does not sync to the latest height");
-                sleep(Duration::from_secs(15)).await;
+                sleep(Duration::from_secs(block_duration)).await;
                 continue;
             }
     
             // 链上最新高度 - latest_height_mut <= 10, 则跳过，避免获取到分叉块
             if chain_height - latest_height_mut <= 10 {
-                // sleep 出块时间
-                warn!("had recorded latest height: {}, waiting {} new blocks will be confirmed...", latest_height_mut, 10);
-                sleep(Duration::from_secs(15)).await;
+                sleep(Duration::from_secs(block_duration)).await;
                 continue;
             }
     
@@ -82,6 +83,7 @@ impl<'a, N:Network> Single<'a, N> {
                         let body = response.text().await?;
                         if status != reqwest::StatusCode::OK {
                             error!("get first block response status: {}, body: {}", status.as_str(), body);
+                            sleep(Duration::from_secs(block_duration)).await;
                             continue;
                         }
                         let latest_block = serde_json::from_str(&body).unwrap();
@@ -89,6 +91,7 @@ impl<'a, N:Network> Single<'a, N> {
                     },
                     Err(e) => {
                         error!("get first block {}, {:?}", self.latest_height , e);
+                        sleep(Duration::from_secs(block_duration)).await;
                         continue;
                     }
                 }
@@ -104,6 +107,7 @@ impl<'a, N:Network> Single<'a, N> {
                     let body = response.text().await?;
                     if status != reqwest::StatusCode::OK {
                         error!("get current block response status: {}, body: {}", status.as_str(), body);
+                        sleep(Duration::from_secs(block_duration)).await;
                         continue;
                     }
                     let current_block: Block<N> = serde_json::from_str(&body).unwrap();
@@ -120,6 +124,7 @@ impl<'a, N:Network> Single<'a, N> {
                 },
                 Err(e) => {
                     error!("get current block {}, {:?}", current_height, e);
+                    sleep(Duration::from_secs(block_duration)).await;
                     continue;
                 }
             }

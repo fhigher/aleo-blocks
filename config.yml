@@ -6,8 +6,8 @@ mysqldsn: "mysql://root:1234567890@127.0.0.1:3306/aleo_blocks"
 batch_request: 20
 # 请求并发大小。获取区块数 = batch_concurrent * batch_request
 batch_concurrent: 5
-# 是否存储区块信息，默认false, 则只存储solution信息
-store_block: false
+# 是否存储区块信息，默认true, 否则只存储solution信息
+store_block: true
 # address为空则记录所有（区块），solution信息
 # address: 
 # 或设置address，只记录address相关的（区块），solution信息
