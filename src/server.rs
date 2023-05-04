@@ -1,6 +1,6 @@
 use std::{
     sync::Arc, 
-    marker::{PhantomData, Send, Sync}, 
+    marker::{Send, Sync}, 
     net::SocketAddr,
 };
 use log::debug;
@@ -43,7 +43,6 @@ pub fn with<T: Clone + Send>(item: T) -> impl Filter<Extract = (T,), Error = std
 pub struct Server<N: Network, S: Storage<N> + Send + Sync + 'static> {
     store: Arc<Store<N, S>>,
     handles: Vec<Arc<JoinHandle<()>>>,
-    _p: PhantomData<N>,
 }
 
 impl<N: Network, S: Storage<N> + Send + Sync + 'static> Server<N, S> {
@@ -51,7 +50,6 @@ impl<N: Network, S: Storage<N> + Send + Sync + 'static> Server<N, S> {
         let mut server = Self { 
             store: Arc::new(store),
             handles: vec![],
-            _p: PhantomData,
         };
 
         server.spawn_server(listen_ip);

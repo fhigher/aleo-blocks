@@ -9,9 +9,9 @@ edition = "2021"
 default = [ "mysql" ]
 
 [dependencies]
-snarkvm-synthesizer = "0.9.13"
-snarkvm-console-network = "0.9.13"
-snarkvm-console-types-address = "0.9.13"
+snarkvm-synthesizer = "0.10.3"
+snarkvm-console-network = "0.10.3"
+snarkvm-console-types-address = "0.10.3"
 snarkos-node-consensus  = {git = "https://github.com/AleoHQ/snarkOS.git", branch = "testnet3"}
 
 tokio = {version = "1.25.0", features = ["full"]}
